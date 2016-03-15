@@ -1,4 +1,3 @@
-
 // this file contains the screens definitions. Screens are the
 // content of the right pane of the pos, containing the main functionalities. 
 // screens are contained in the PosWidget, in pos_widget.js
@@ -739,8 +738,16 @@ function openerp_pos_screens(instance, module){ //module is instance.point_of_sa
                     message: _t('A Customer Name Is Required'),
                 });
                 return;
+             }
+            //TB +
+            if (!fields.vat) {
+                this.pos_widget.screen_selector.show_popup('error',{
+                    message: _t('A Customer VAT Number Is Required'),
+                });
+                return;
+            //TB -
             }
-            
+
             if (this.uploaded_picture) {
                 fields.image = this.uploaded_picture;
             }
@@ -981,11 +988,18 @@ function openerp_pos_screens(instance, module){ //module is instance.point_of_sa
         },
         refresh: function() {
             var order = this.pos.get('selectedOrder');
+            //TB +
+            var server_data = [];
+            _.each(this.pos.serv_order[0], function (el) {
+                server_data.push(el);
+                });
+            //TB -
             $('.pos-receipt-container', this.$el).html(QWeb.render('PosTicket',{
                     widget:this,
                     order: order,
                     orderlines: order.get('orderLines').models,
                     paymentlines: order.get('paymentLines').models,
+                    server_data: server_data[0], //TB
                 }));
         },
         close: function(){
@@ -1008,7 +1022,6 @@ function openerp_pos_screens(instance, module){ //module is instance.point_of_sa
                 },this);
 
             this.bind_events();
-            this.decimal_point = instance.web._t.database.parameters.decimal_point;
 
             this.line_delete_handler = function(event){
                 var node = this;
@@ -1027,14 +1040,7 @@ function openerp_pos_screens(instance, module){ //module is instance.point_of_sa
                     node = node.parentNode;
                 }
                 if(node){
-                    var amount;
-                    try{
-                        amount = instance.web.parse_value(this.value, {type: "float"});
-                    }
-                    catch(e){
-                        amount = 0;
-                    }
-                    node.line.set_amount(amount);
+                    node.line.set_amount(this.value);
                 }
             };
 
@@ -1179,12 +1185,7 @@ function openerp_pos_screens(instance, module){ //module is instance.point_of_sa
                     input.value = '';
                 }else{
                     input.value = value;
-
-                    // Microsoft Edge >= 12 crashes (code 800a025e) when calling
-                    // select on a non-empty input element not part of document
-                    if (! this.hidden) {
-                        input.select();
-                    }
+                    input.select();
                 }
             }
         },
@@ -1276,17 +1277,6 @@ function openerp_pos_screens(instance, module){ //module is instance.point_of_sa
                 return;
             }
 
-            var plines = currentOrder.get('paymentLines').models;
-            for (var i = 0; i < plines.length; i++) {
-                if (plines[i].get_type() === 'bank' && plines[i].get_amount() < 0) {
-                    this.pos_widget.screen_selector.show_popup('error',{
-                        'message': _t('Negative Bank Payment'),
-                        'comment': _t('You cannot have a negative amount in a Bank payment. Use a cash payment method to return money to the customer.'),
-                    });
-                    return;
-                }
-            }
-
             if(!this.is_paid()){
                 return;
             }
@@ -1340,15 +1330,17 @@ function openerp_pos_screens(instance, module){ //module is instance.point_of_sa
                 });
 
             }else{
-                this.pos.push_order(currentOrder) 
+                var ss_order = this.pos.push_order(currentOrder);  //GK
                 if(this.pos.config.iface_print_via_proxy){
                     var receipt = currentOrder.export_for_printing();
                     this.pos.proxy.print_receipt(QWeb.render('XmlReceipt',{
                         receipt: receipt, widget: self,
                     }));
                     this.pos.get('selectedOrder').destroy();    //finish order and go back to scan screen
+                    this.pos.db.remove_all_orders(); //TB
                 }else{
                     this.pos_widget.screen_selector.set_current_screen(this.next_screen);
+                    this.pos.db.remove_all_orders(); //TB
                 }
             }
 

@@ -1,4 +1,3 @@
-
 function openerp_pos_devices(instance,module){ //module is instance.point_of_sale
 	var _t = instance.web._t;
 
@@ -555,7 +554,10 @@ function openerp_pos_devices(instance,module){ //module is instance.point_of_sal
         // returns the checksum of the ean, or -1 if the ean has not the correct length, ean must be a string
         ean_checksum: function(ean){
             var code = ean.split('');
-            if(code.length !== 13){
+            //TB +
+            //if(code.length !== 13){
+            if((code.length !== 13) && (code.length !== 8)){
+            //TB -
                 return -1;
             }
             var oddsum = 0, evensum = 0, total = 0;
@@ -576,6 +578,8 @@ function openerp_pos_devices(instance,module){ //module is instance.point_of_sal
             return /^\d+$/.test(ean) && this.ean_checksum(ean) === Number(ean[ean.length-1]);
         },
         // returns a valid zero padded ean13 from an ean prefix. the ean prefix must be a string.
+        //TB +
+        /*
         sanitize_ean:function(ean){
             ean = ean.substr(0,13);
 
@@ -583,8 +587,24 @@ function openerp_pos_devices(instance,module){ //module is instance.point_of_sal
                 ean = ean + '0';
             }
             return ean.substr(0,12) + this.ean_checksum(ean);
+        */
+         sanitize_ean:function(ean){
+            if (ean.length===8){
+                ean = ean.substr(0,8);
+                for(var n = 0, count = (8 - ean.length); n < count; n++){
+                    ean = ean + '0';
+                }
+                return ean.substr(0,7) + this.ean_checksum(ean);
+                }
+            else{
+                ean = ean.substr(0,13);
+                for(var n = 0, count = (13 - ean.length); n < count; n++){
+                    ean = ean + '0';
+                }
+                return ean.substr(0,12) + this.ean_checksum(ean);
+            }
         },
-        
+        //TB -
         // attempts to interpret an ean (string encoding an ean)
         // it will check its validity then return an object containing various
         // information about the ean.
@@ -645,6 +665,11 @@ function openerp_pos_devices(instance,module){ //module is instance.point_of_sal
             }
 
             function get_basecode(ean,pattern){
+                //TB +
+                if (ean.length === 8){
+                    return self.sanitize_ean(ean);
+                }
+                //TB -
                 var base = '';
                 for(var i = 0; i < pattern.length; i++){
                     var p = pattern[i];
@@ -682,6 +707,10 @@ function openerp_pos_devices(instance,module){ //module is instance.point_of_sal
                 // This is because ean-13 are UCP-A with an additional zero at the beginning,
                 // so by stripping zeros you get retrocompatibility with UCP-A systems.
                 var parse_result = this.parse_ean('0'+code);
+            //TB +
+            }else if(code.length === 8 && this.check_ean(code)){
+                var parse_result = this.parse_ean(code);
+            //TB -
             }else if(this.pos.db.get_product_by_reference(code)){
                 var parse_result = {
                     encoding: 'reference',

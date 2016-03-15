@@ -1,5 +1,5 @@
 function openerp_pos_db(instance, module){ 
-
+    var module = instance.point_of_sale;
     /* The PosDB holds reference to data that is either
      * - static: does not change between pos reloads
      * - persistent : must stay between reloads ( orders )
@@ -37,6 +37,23 @@ function openerp_pos_db(instance, module){
             this.packagings_by_id = {};
             this.packagings_by_product_tmpl_id = {};
             this.packagings_by_ean13 = {};
+            // TB +
+            this.product_by_supplier_ean = {};
+            this.product_by_alternative_eans = {};
+            this.acc_category_by_id = {};
+            this.acc_root_category_id  = 0;
+            this.acc_category_products = {};
+            this.acc_category_ancestors = {};
+            this.acc_category_childs = {};
+            this.acc_category_parent    = {};
+            this.acc_category_search_string = {};
+
+            this.supplierinfo_by_id = {};
+            this.supplierinfo_by_ean13 = {};
+            this.supplierinfo_by_product_tmpl_id = {};
+
+            this.product_by_tmpl_id = {};
+            // TB -
         },
         /* returns the category object from its id. If you pass a list of id as parameters, you get
          * a list of category objects. 
@@ -146,7 +163,13 @@ function openerp_pos_db(instance, module){
             for (var i = 0; i < packagings.length; i++) {
                 str += '|' + packagings[i].ean;
             }
-            str  = product.id + ':' + str.replace(/:/g,'') + '\n';
+            //TB +
+            var alternative_eans = product.alternative_eans || [];
+            for(var a = 0, alen = alternative_eans.length; a < alen; a++){
+                str += '|' + alternative_eans[a];
+            }
+            //TB -
+            str  = product.id + ':' + str.replace(':','') + '\n';
             return str;
         },
         add_products: function(products){
@@ -185,6 +208,15 @@ function openerp_pos_db(instance, module){
                     this.category_search_string[ancestor] += search_string; 
                 }
                 this.product_by_id[product.id] = product;
+                //TB +
+                this.product_by_tmpl_id[product.product_tmpl_id] = product;
+
+                if(product.alternative_eans){
+                     for(var a = 0, alen = product.alternative_eans.length; a < alen; a++){
+                        this.product_by_alternative_eans[product.alternative_eans[a]] = product;
+                    }
+                }
+                //TB -
                 if(product.ean13){
                     this.product_by_ean13[product.ean13] = product;
                 }
@@ -211,9 +243,11 @@ function openerp_pos_db(instance, module){
             if(partner.ean13){
                 str += '|' + partner.ean13;
             }
+            // TB +
             if(partner.address){
                 str += '|' + partner.address;
             }
+            /*
             if(partner.phone){
                 str += '|' + partner.phone.split(' ').join('');
             }
@@ -223,6 +257,11 @@ function openerp_pos_db(instance, module){
             if(partner.email){
                 str += '|' + partner.email;
             }
+            */
+            if(partner.vat){
+                str += '|' + partner.vat.split(' ').join('');
+            }
+            // TB -
             str = '' + partner.id + ':' + str.replace(':','') + '\n';
             return str;
         },
@@ -338,8 +377,30 @@ function openerp_pos_db(instance, module){
             }
             var pack = this.packagings_by_ean13[ean13];
             if(pack){
-                return this.product_by_id[pack.product_tmpl_id[0]];
+                //TB +
+                //return this.product_by_id[pack.product_tmpl_id[0]];
+                return this.product_by_tmpl_id[pack.product_tmpl_id[0]];
+                //TB -
             }
+
+            //TB +
+            if(this.product_by_alternative_eans[ean13]){
+                return this.product_by_alternative_eans[ean13];
+            }
+            /*
+            for(var i = 0, len = this.product_by_alternative_eans.length; i < len; i++){
+                if(i = ean13){
+                    return this.product_by_alternative_eans[ean13];
+                }
+            }
+
+            var info = this.supplierinfo_by_ean13[ean13];
+            if(info){
+                return this.product_by_tmpl_id[info.product_tmpl_id[0]];
+            }
+            */
+            //TB -
+
             return undefined;
         },
         get_product_by_reference: function(ref){
@@ -362,7 +423,7 @@ function openerp_pos_db(instance, module){
         search_product_in_category: function(category_id, query){
             try {
                 query = query.replace(/[\[\]\(\)\+\*\?\.\-\!\&\^\$\|\~\_\{\}\:\,\\\/]/g,'.');
-                query = query.replace(/ /g,'.+');
+                query = query.replace(' ','.+');
                 var re = RegExp("([0-9]+):.*?"+query,"gi");
             }catch(e){
                 return [];
@@ -418,5 +479,89 @@ function openerp_pos_db(instance, module){
             }
             return undefined;
         },
+
+        //TB +
+        add_supplierinfo: function(supplierinfo){
+            for(var i = 0, len = supplierinfo.length; i < len; i++){
+                var info = supplierinfo[i];
+                this.supplierinfo_by_id[info.id] = info;
+                if(!this.supplierinfo_by_product_tmpl_id[info.product_tmpl_id[0]]){
+                    this.supplierinfo_by_product_tmpl_id[info.product_tmpl_id[0]] = [];
+                }
+                this.supplierinfo_by_product_tmpl_id[info.product_tmpl_id[0]].push(info);
+                if(info.ean13){
+                    this.supplierinfo_by_ean13[info.ean13] = info;
+                }
+            }
+        },
+
+       get_acc_category_by_id: function(acc_categ_id){
+            if(acc_categ_id instanceof Array){
+                var list = [];
+                for(var i = 0, len = acc_categ_id.length; i < len; i++){
+                    var cat = this.acc_category_by_id[acc_categ_id[i]];
+                    if(cat){
+                        list.push(cat);
+                    }else{
+                        console.error("get_acc_category_by_id: no accouting category has id:",acc_categ_id[i]);
+                    }
+                }
+                return list;
+            }else{
+                return this.acc_category_by_id[acc_categ_id];
+            }
+        },
+        /* returns a list of the accouting category's child categories ids, or an empty list
+         * if a category has no childs */
+        get_acc_category_childs_ids: function(acc_categ_id){
+            return this.acc_category_childs[acc_categ_id] || [];
+        },
+        /* returns a list of all ancestors (parent, grand-parent, etc) categories ids
+         * starting from the root category to the direct parent */
+        get_acc_category_ancestors_ids: function(acc_categ_id){
+            return this.acc_category_ancestors[acc_categ_id] || [];
+        },
+        /* returns the parent category's id of a category, or the root_category_id if no parent.
+         * the root category is parent of itself. */
+        get_acc_category_parent_id: function(acc_categ_id){
+            return this.acc_category_parent[acc_categ_id] || this.acc_root_category_id;
+        },
+        /* adds categories definitions to the database. categories is a list of categories objects as
+         * returned by the openerp server. Categories must be inserted before the products or the
+         * product/ categories association may (will) not work properly */
+        add_acc_categories: function(acc_categories){
+            var self = this;
+            if(!this.acc_category_by_id[this.acc_root_category_id]){
+                this.acc_category_by_id[this.acc_root_category_id] = {
+                    id : this.acc_root_category_id,
+                    name : 'Root',
+                };
+            }
+            for(var i=0, len = acc_categories.length; i < len; i++){
+                this.acc_category_by_id[acc_categories[i].id] = acc_categories[i];
+            }
+            for(var i=0, len = acc_categories.length; i < len; i++){
+                var cat = acc_categories[i];
+                var parent_id = cat.parent_id[0] || this.acc_root_category_id;
+                this.acc_category_parent[cat.id] = cat.parent_id[0];
+                if(!this.acc_category_childs[parent_id]){
+                    this.acc_category_childs[parent_id] = [];
+                }
+                this.acc_category_childs[parent_id].push(cat.id);
+            }
+            function acc_make_ancestors(cat_id, ancestors){
+                self.acc_category_ancestors[cat_id] = ancestors;
+
+                ancestors = ancestors.slice(0);
+                ancestors.push(cat_id);
+
+                var childs = self.acc_category_childs[cat_id] || [];
+                for(var i=0, len = childs.length; i < len; i++){
+                    acc_make_ancestors(childs[i], ancestors);
+                }
+            }
+            acc_make_ancestors(this.acc_root_category_id, []);
+        },
+        //TB -
     });
 }

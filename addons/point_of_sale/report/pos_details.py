@@ -19,10 +19,7 @@
 #
 ##############################################################################
 
-import datetime
-import pytz
 import time
-from openerp import tools
 from openerp.osv import osv
 from openerp.report import report_sxw
 
@@ -49,23 +46,8 @@ class pos_details(report_sxw.rml_parse):
         result = {}
         user_ids = form['user_ids'] or self._get_all_users()
         company_id = user_obj.browse(self.cr, self.uid, self.uid).company_id.id
-        user = self.pool['res.users'].browse(self.cr, self.uid, self.uid) or self.localcontext.get('tz') or 'UTC'
-        tz_name = user.tz
-        user_tz = pytz.timezone(tz_name)
-        between_dates = {}
-        for date_field, delta in {'date_start': {'days': 0}, 'date_end': {'days': 1}}.items():
-            timestamp = datetime.datetime.strptime(form[date_field] + ' 00:00:00', tools.DEFAULT_SERVER_DATETIME_FORMAT) + datetime.timedelta(**delta)
-            timestamp = user_tz.localize(timestamp).astimezone(pytz.utc)
-            between_dates[date_field] = timestamp.strftime(tools.DEFAULT_SERVER_DATETIME_FORMAT)
-
-        pos_ids = pos_obj.search(self.cr, self.uid, [
-            ('date_order', '>=', between_dates['date_start']),
-            ('date_order', '<', between_dates['date_end']),
-            ('user_id', 'in', user_ids),
-            ('state', 'in', ['done', 'paid', 'invoiced']),
-            ('company_id', '=', company_id)
-        ])
-        for pos in pos_obj.browse(self.cr, self.uid, pos_ids, context=self.localcontext):
+        pos_ids = pos_obj.search(self.cr, self.uid, [('date_order','>=',form['date_start'] + ' 00:00:00'),('date_order','<=',form['date_end'] + ' 23:59:59'),('user_id','in',user_ids),('state','in',['done','paid','invoiced']),('company_id','=',company_id)])
+        for pos in pos_obj.browse(self.cr, self.uid, pos_ids):
             for pol in pos.lines:
                 result = {
                     'code': pol.product_id.default_code,
@@ -147,7 +129,13 @@ class pos_details(report_sxw.rml_parse):
             return {}
 
     def _total_of_the_day(self, objects):
-        return self.total or 0.00
+        if self.total:
+             if self.total == self.total_invoiced:
+                 return self.total
+             else:
+                 return ((self.total or 0.00) - (self.total_invoiced or 0.00))
+        else:
+            return False
 
     def _sum_invoice(self, objects):
         return reduce(lambda acc, obj:
