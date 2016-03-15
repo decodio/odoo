@@ -6,6 +6,8 @@
             <field name="name">sale.order.form.sale.stock</field>
             <field name="model">sale.order</field>
             <field name="inherit_id" ref="sale.view_order_form"/>
+            <!-- DECODIO TEMP SOL. TO UPDATE EXISTING DB TODO DELETE LINE-->
+            <field name="active" eval="False"/><!-- DECODIO TEMP SOL. TO UPDATE EXISTING DB TODO DELETE LINE-->
             <field name="arch" type="xml">
                 <data>
                    <xpath expr="//button[@name='invoice_corrected']" position="after">

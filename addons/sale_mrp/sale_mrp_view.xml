@@ -20,6 +20,8 @@
             <field name="name">sale.order.form.sale.stock.mrp</field>
             <field name="model">sale.order</field>
             <field name="inherit_id" ref="sale.view_order_form"/>
+            <!-- DECODIO TEMP SOL. TO UPDATE EXISTING DB TODO DELETE LINE-->
+            <field name="active" eval="False"/><!-- DECODIO TEMP SOL. TO UPDATE EXISTING DB TODO DELETE LINE-->
             <field name="arch" type="xml">
                <xpath expr="//page[@string='Order Lines']/field[@name='order_line']/form[@string='Sales Order Lines']/group/group/field[@name='address_allotment_id']" position="after">
                    <field name="property_ids" widget="many2many_tags"

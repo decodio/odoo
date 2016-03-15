@@ -270,7 +270,11 @@ class website(osv.osv):
 
     def get_current_website(self, cr, uid, context=None):
         # TODO: Select website, currently hard coded
-        return self.pool['website'].browse(cr, uid, 1, context=context)
+        #DECOD.IO KGB +
+        website_id= request.registry["ir.model.data"].get_object_reference(cr, uid, 'website', 'default_website')
+        return self.pool['website'].browse(cr, uid, website_id[1], context=context)
+        #return self.pool['website'].browse(cr, uid, 1, context=context)
+        #DECOD.IO KGB -
 
     def is_publisher(self, cr, uid, ids, context=None):
         Access = self.pool['ir.model.access']

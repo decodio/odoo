@@ -4,7 +4,7 @@
 }
 
 .oe_pad_switch {
-    position: absolute;
+    display: none;  /* DECODIO: hide full screen button */
     top: 5px;
     left: 383px;
     width: 28px;

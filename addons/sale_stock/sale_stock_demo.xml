@@ -36,7 +36,7 @@
         
          <!-- Confirm some Sale Orders-->
         <workflow action="order_confirm" model="sale.order" ref="sale.sale_order_1"/>
-        <workflow action="order_confirm" model="sale.order" ref="sale.sale_order_5"/>
+        <!-- DECODIO workflow action="order_confirm" model="sale.order" ref="sale.sale_order_5"/-->
         
         <!-- Run all schedulers -->
         <function model="procurement.order" name="run_scheduler"/>

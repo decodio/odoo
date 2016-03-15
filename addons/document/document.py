@@ -54,7 +54,8 @@ class document_file(osv.osv):
         # Fields of document:
         'user_id': fields.many2one('res.users', 'Owner', select=1),
         'parent_id': fields.many2one('document.directory', 'Directory', select=1, change_default=True),
-        'index_content': fields.text('Indexed Content'),
+        # DECODIO -speed 'index_content': fields.text('Indexed Content'),
+        'index_content': fields.text('Indexed Content', readonly=True, _prefetch=False),
         'partner_id':fields.many2one('res.partner', 'Partner', select=1),
         'file_type': fields.char('Content Type'),
     }

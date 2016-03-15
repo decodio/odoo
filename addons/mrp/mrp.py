@@ -1022,8 +1022,9 @@ class mrp_production(osv.osv):
         self.message_post(cr, uid, production_id, body=_("%s produced") % self._description, context=context)
 
         # Remove remaining products to consume if no more products to produce
-        if not production.move_created_ids and production.move_lines:
-            stock_mov_obj.action_cancel(cr, uid, [x.id for x in production.move_lines], context=context)
+        # DECODIO KGB I don't like this
+        #if not production.move_created_ids and production.move_lines:
+        #    stock_mov_obj.action_cancel(cr, uid, [x.id for x in production.move_lines], context=context)
 
         self.signal_workflow(cr, uid, [production_id], 'button_produce_done')
         return True

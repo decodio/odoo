@@ -812,7 +812,8 @@ class email_template(osv.osv):
 
 class report_xml(osv.osv):
     _inherit = 'ir.actions.report.xml'
-    def search(self, cr, uid, args, offset=0, limit=None, order=None, context=None, count=False):
+    #DECODIO: zamjenjena mjesta count i context u pozivu
+    def search(self, cr, uid, args, offset=0, limit=None, order=None, count=False, context=None):
         if context is None:
             context = {}
         object_id = context.get('object_id')

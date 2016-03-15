@@ -2549,14 +2549,27 @@ instance.web.form.FieldFloat = instance.web.form.FieldChar.extend({
             value_ = 0;
         }
         if (this.digits !== undefined && this.digits.length === 2) {
+            // KGB DECODIO TODO Test this rounding. Maybe it is better without it?
             value_ = instance.web.round_decimals(value_, this.digits[1]);
         }
         this._super.apply(this, [value_]);
+        // KGB DECODIO force right-align
+        //this.$el.css("text-align", "right");
+        this.$('input').css("text-align", "right");
+        this.$el.find('input').css("text-align", "right");
     },
     focus: function () {
         var $input = this.$('input:first');
         return $input.length ? $input.select() : false;
     }
+    ,// KGB DECODIO TODO .css("text-align", "right") Dario help
+    set_dimensions: function (height, width) {
+        this._super(height, width);
+        this.$el.css("text-align", "right");
+        this.$('input').css("text-align", "right");
+        this.$el.find('input').css("text-align", "right");
+     }
+
 });
 
 instance.web.form.FieldCharDomain = instance.web.form.AbstractField.extend(instance.web.form.ReinitializeFieldMixin, {

@@ -390,19 +390,6 @@ Thanks!</field>
             <field name="quantity">4</field>
             <field name="account_id" ref="account.a_sale"/>
         </record>
-        <workflow action="invoice_open" model="account.invoice" ref="test_crm_sale_invoice_1"/>
-        <function model="account.invoice" name="pay_and_reconcile">
-            <!-- ids = -->                    <value eval="[ref('test_crm_sale_invoice_1')]"/>
-            <!-- pay_amount = -->            <value eval="1850"/>
-            <!-- pay_account_id = -->        <value eval="ref('account.cash')"/>
-            <!-- period_id = -->            <value eval="ref('account.period_' + str(int(time.strftime('%m'))))"/>
-            <!-- pay_journal_id = -->        <value eval="ref('account.bank_journal')"/>
-            <!-- writeoff_acc_id = -->        <value eval="ref('account.cash')"/>
-            <!-- writeoff_period_id = -->    <value eval="ref('account.period_' + str(int(time.strftime('%m'))))"/>
-            <!-- writeoff_journal_id = -->    <value eval="ref('account.bank_journal')"/>
-            <!-- context = -->              <value eval="{}"/>
-            <!-- name = -->                 <value eval="str('Payment from ASUStek')"/>
-        </function>
 
         <!-- Invoice for Indirect Marketing -->
 
@@ -424,19 +411,7 @@ Thanks!</field>
             <field name="quantity">1</field>
             <field name="account_id" ref="account.a_sale"/>
         </record>
-        <workflow action="invoice_open" model="account.invoice" ref="test_crm_sale_invoice_2"/>
-        <function model="account.invoice" name="pay_and_reconcile">
-            <!-- ids = -->                    <value eval="[ref('test_crm_sale_invoice_2')]"/>
-            <!-- pay_amount = -->            <value eval="500"/>
-            <!-- pay_account_id = -->        <value eval="ref('account.cash')"/>
-            <!-- period_id = -->            <value eval="ref('account.period_' + str(int(time.strftime('%m'))))"/>
-            <!-- pay_journal_id = -->        <value eval="ref('account.bank_journal')"/>
-            <!-- writeoff_acc_id = -->        <value eval="ref('account.cash')"/>
-            <!-- writeoff_period_id = -->    <value eval="ref('account.period_' + str(int(time.strftime('%m'))))"/>
-            <!-- writeoff_journal_id = -->    <value eval="ref('account.bank_journal')"/>
-            <!-- context = -->              <value eval="{}"/>
-            <!-- name = -->                 <value eval="str('Payment from ASUStek')"/>
-        </function>
+
 
     </data>
 </openerp>
