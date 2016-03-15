@@ -30,6 +30,11 @@ evented = False
 if sys.modules.get("gevent") is not None:
     evented = True
 
+# DECODIO FIX for debugging
+# the module must be available, and the debugger must be off
+#evented = (sys.modules.get("gevent") is not None
+#           and sys.gettrace() is None)
+
 # Is the server running in pefork mode (e.g. behind Gunicorn).
 # If this is True, the processes have to communicate some events,
 # e.g. database update or cache invalidation. Each process has also

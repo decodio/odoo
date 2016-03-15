@@ -187,7 +187,9 @@ def get_pg_type(f, type_override=None):
         if f.digits is not None:
             pg_type = ('numeric', 'NUMERIC')
         else:
-            pg_type = ('float8', 'DOUBLE PRECISION')
+            # DECODIO: use pg numeric type for python float
+            # pg_type = ('float8', 'DOUBLE PRECISION')
+            pg_type = ('numeric', 'NUMERIC')
     elif issubclass(field_type, (fields.char, fields.reference)):
         pg_type = ('varchar', pg_varchar(f.size))
     elif issubclass(field_type, fields.selection):
@@ -2513,10 +2515,12 @@ class BaseModel(object):
                                 not getattr(f, 'nodrop', False):
                             _logger.info('column %s (%s) converted to a function, removed from table %s',
                                          k, f.string, self._table)
-                            cr.execute('ALTER TABLE "%s" DROP COLUMN "%s" CASCADE' % (self._table, k))
-                            cr.commit()
+                            # DECODIO: Please don't drop columns on module upgrade/uninstall
+                            # cr.execute('ALTER TABLE "%s" DROP COLUMN "%s" CASCADE' % (self._table, k))
+                            # cr.commit()
                             _schema.debug("Table '%s': dropped column '%s' with cascade",
                                 self._table, k)
+                            #print "Table '%s': dropped column '%s' with cascade" % (self._table, k)
                             f_obj_type = None
                         else:
                             f_obj_type = get_pg_type(f) and get_pg_type(f)[0]
@@ -2546,6 +2550,8 @@ class BaseModel(object):
                                 cr.commit()
                                 _schema.debug("Table '%s': column '%s' (type varchar) changed size from %s to %s",
                                     self._table, k, f_pg_size or 'unlimited', f.size or 'unlimited')
+                                #  DECODIO
+                                # print "Table '%s': column '%s' (type varchar) changed size from %s to %s" %  (self._table, k, f_pg_size or 'unlimited', f.size or 'unlimited')
                             for c in casts:
                                 if (f_pg_type==c[0]) and (f._type==c[1]):
                                     if f_pg_type != f_obj_type:
@@ -2557,6 +2563,8 @@ class BaseModel(object):
                                         cr.commit()
                                         _schema.debug("Table '%s': column '%s' changed type from %s to %s",
                                             self._table, k, c[0], c[1])
+                                        # DECODIO
+                                        # print "Table '%s': column '%s' changed type from %s to %s" % (self._table, k, c[0], c[1])
                                     break
 
                             if f_pg_type != f_obj_type:
@@ -2578,7 +2586,8 @@ class BaseModel(object):
                                     cr.execute("COMMENT ON COLUMN %s.\"%s\" IS %%s" % (self._table, k), (f.string,))
                                     _schema.warning("Table `%s`: column `%s` has changed type (DB=%s, def=%s), data moved to column `%s`",
                                                     self._table, k, f_pg_type, f._type, newname)
-
+                                    # DECODIO
+                                    # print "Table `%s`: column `%s` has changed type (DB=%s, def=%s), data moved to column `%s`" % ( self._table, k, f_pg_type, f._type, newname)
                             # if the field is required and hasn't got a NOT NULL constraint
                             if f.required and f_pg_notnull == 0:
                                 if has_rows:

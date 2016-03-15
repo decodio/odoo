@@ -30,6 +30,7 @@ import os
 import sys
 import threading
 import time
+from hashlib import md5
 
 import openerp
 import openerp.modules.db
@@ -115,6 +116,36 @@ def load_module_graph(cr, graph, status=None, perform_checks=True, skip_modules=
                 noupdate = False
                 if kind in ('demo', 'demo_xml') or (filename.endswith('.csv') and kind in ('init', 'init_xml')):
                     noupdate = True
+
+                # DECODIO: Start noupdate_if_unchanged
+                # From Anybox pepp8 branch
+                if tools.config.options.get('noupdate_if_unchanged'):
+                    pathname = os.path.join(module_name, filename)
+                    print pathname
+                    cr.execute(
+                        'select value from ir_values where name=%s and key=%s',
+                        (pathname, 'digest'))
+                    olddigest = (cr.fetchone() or (None,))[0]
+                    if olddigest is None:
+                        cr.execute(
+                            'insert into ir_values (name, model, key, value) '
+                            'values (%s, %s, %s, NULL)',
+                            (pathname, 'ir_module_module', 'digest',))
+                    with tools.file_open(pathname) as fp:
+                        digest = md5.md5(fp.read()).hexdigest()
+                    if digest == olddigest:
+                        noupdate = True
+                        print 'noupdate_if_unchanged'+pathname
+                    else:
+                        cr.execute(
+                            'update ir_values set value=%s where name=%s and '
+                            'key=%s',
+                            (digest, pathname, 'digest'))
+                if kind in ('demo', 'demo_xml') or (
+                    filename.endswith('.csv') and kind in ('init', 'init_xml')):
+                    noupdate = True
+                # DECODIO End noupdate_if_unchanged
+
                 tools.convert_file(cr, module_name, filename, idref, mode, noupdate, kind, report)
         finally:
             if kind in ('demo', 'test'):

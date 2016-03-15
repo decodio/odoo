@@ -285,8 +285,13 @@ class configmanager(object):
         if os.name == 'posix':
             group.add_option('--auto-reload', dest='auto_reload', action='store_true', my_default=False, help='enable auto reload')
         group.add_option('--debug', dest='debug_mode', action='store_true', my_default=False, help='enable debug mode')
-        group.add_option("--stop-after-init", action="store_true", dest="stop_after_init", my_default=False,
-                          help="stop the server after its initialization")
+        group.add_option("--stop-after-init", action="store_true",
+                         dest="stop_after_init", my_default=False,
+                         help="stop the server after its initialization")
+        # DECODIO: add noupdate_if_unchanged
+        group.add_option("--noupdate_if_unchanged", action="store_true",
+                         dest="noupdate_if_unchanged", my_default=False,
+                         help="Don't update xml data if unchanged.")
         group.add_option("-t", "--timezone", dest="timezone", my_default=False,
                          help="specify reference timezone for the server (e.g. Europe/Brussels")
         group.add_option("--osv-memory-count-limit", dest="osv_memory_count_limit", my_default=False,

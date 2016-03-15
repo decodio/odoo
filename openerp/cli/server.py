@@ -46,6 +46,11 @@ from . import Command
 __author__ = openerp.release.author
 __version__ = openerp.release.version
 
+# DECODIO: SET DEFAULTENCODING--!!!RISKY!!!
+# https://anonbadger.wordpress.com/2015/06/16/why-sys-setdefaultencoding-will-break-code/
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 # Also use the `openerp` logger for the main script.
 _logger = logging.getLogger('openerp')
 

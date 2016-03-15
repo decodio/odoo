@@ -357,7 +357,9 @@ class view(osv.osv):
                           'msg': message,
                         }
         _logger.error(message)
-        raise AttributeError(message)
+        # DECODIO: Temporary, until we fix our views
+        # raise AttributeError(message)
+        print message
 
     def locate_node(self, arch, spec):
         """ Locate a node in a source (parent) architecture.
