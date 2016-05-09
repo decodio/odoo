@@ -349,6 +349,11 @@ def get_modules():
     initialize_sys_path()
     for ad in ad_paths:
         plist.extend(listdir(ad))
+    # DECODIO - start
+    duplicates = set([x for x in plist if plist.count(x) > 1])
+    if duplicates:
+        _logger.warning("Duplicate Modules: %s ", duplicates)
+    # DECODIO - end
     return list(set(plist))
 
 def get_modules_with_version():
