@@ -3196,7 +3196,11 @@ class BaseModel(object):
             try:
                 values = {'id': record.id}
                 for name, field in name_fields:
-                    values[name] = field.convert_to_read(record[name], use_name_get)
+                    try:  # DECODIO desperate
+                        values[name] = field.convert_to_read(record[name], use_name_get)
+                    except KeyError:
+                        values[name] = [] # DECODIO: works for One2Many value = self._recs.env.cache[field][self._recs.id]
+                        _logger.warning("Cache miss %s.read() for field '%s'", self._name, name)
                 result.append(values)
             except MissingError:
                 pass
