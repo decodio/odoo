@@ -1491,8 +1491,8 @@ instance.web.View = instance.web.Widget.extend({
             // DECODIO:
             // DUPLICATE LINES ON BUTTON EVEN IF WARNING WAS TRIGGERED: https://github.com/odoo/odoo/issues/5629
             // Original:
-            //return dataset.call_button(action_data.name, args).then(handler).then(function () {
-            return dataset.call_button(action_data.name, args).then(handler,function () { self.recursive_reload();}).then(function () { // DECODIO
+            return dataset.call_button(action_data.name, args).then(handler).then(function () {
+            //return dataset.call_button(action_data.name, args).then(handler,function () { self.recursive_reload();}).then(function () { // DECODIO function undefined if clicked button on line
                 if (instance.webclient) {
                     instance.webclient.menu.do_reload_needaction();
                 }
