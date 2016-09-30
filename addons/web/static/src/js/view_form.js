@@ -1736,6 +1736,20 @@ instance.web.form.compute_domain = function(expr, fields) {
                 if (!_.isArray(val)) val = [val];
                 stack.push(!_(val).contains(field_value));
                 break;
+            case 'contains':
+                field_value_array = [];
+                if (field_value){
+                    var field_value_array = field_value.split(',');};
+                if (!_.isArray(field_value_array)) array = [field_value_array];
+                stack.push(_(field_value_array).contains(val));
+                break;
+            case 'not contains':
+                field_value_array = [];
+                if (field_value){
+                    var field_value_array = field_value.split(',');};
+                if (!_.isArray(field_value)) field_value = [field_value];
+                stack.push(!_(field_value).contains(val));
+                break;
             default:
                 console.warn(
                     _t("Unsupported operator %s in domain %s"),
