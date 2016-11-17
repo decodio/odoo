@@ -448,6 +448,7 @@ class configmanager(object):
             'test_file', 'test_enable', 'test_commit', 'test_report_directory',
             'osv_memory_count_limit', 'osv_memory_age_limit', 'max_cron_threads', 'unaccent',
             'data_dir',
+            'noupdate_if_unchanged',  # DECODIO
         ]
 
         posix_keys = [

@@ -1214,6 +1214,11 @@ class ir_model_data(osv.osv):
         if not modules or config.get('import_partial'):
             return True
 
+        # DECODIO: noupdate_if_unchanged
+        if config.get('noupdate_if_unchanged', False):
+           _logger.warning('[noupdate_if_unchanged] NOT Deleting XML data')
+           return True
+
         bad_imd_ids = []
         context = {MODULE_UNINSTALL_FLAG: True}
         cr.execute("""SELECT id,name,model,res_id,module FROM ir_model_data
@@ -1222,6 +1227,12 @@ class ir_model_data(osv.osv):
         for (id, name, model, res_id, module) in cr.fetchall():
             if (module, name) not in self.loads:
                 if model in self.pool:
+
+                    # DECODIO: noupdate_if_unchanged
+                    if config.get('noupdate_if_unchanged', False):
+                        _logger.warning('[noupdate_if_unchanged] NOT Deleting %s@%s (%s.%s)', res_id, model, module, name)
+                        continue
+
                     _logger.info('Deleting %s@%s (%s.%s)', res_id, model, module, name)
                     if self.pool[model].exists(cr, uid, [res_id], context=context):
                         self.pool[model].unlink(cr, uid, [res_id], context=context)

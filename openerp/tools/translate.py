@@ -44,6 +44,9 @@ import osutil
 import openerp
 from openerp import SUPERUSER_ID
 
+import functools # DECODIO: noupdate_if_unchanged
+from hashlib import sha256  # DECODIO: noupdate_if_unchanged
+
 _logger = logging.getLogger(__name__)
 
 # used to notify web client that these translations should be loaded in the UI
@@ -926,6 +929,36 @@ def trans_generate(lang, modules, cr):
     return out
 
 def trans_load(cr, filename, lang, verbose=True, module_name=None, context=None):
+
+    # DECODIO: Start noupdate_if_unchanged
+    # From Anybox pepp8 branch
+    try:
+        if config.config.options.get('noupdate_if_unchanged', False):
+            pathname =  module_name + filename.split(module_name)[1]
+            cr.execute(
+                'select value from ir_values where name=%s and key=%s', (pathname, 'digest'))
+            olddigest = (cr.fetchone() or (None,))[0]
+            if olddigest is None:
+                cr.execute(
+                    'insert into ir_values (name, model, key, value) '
+                    'values (%s, %s, %s, NULL)',
+                    (pathname, 'ir_module_module', 'digest',))
+            chunk_size = 65336
+            digest = sha256()
+            with misc.file_open(pathname, mode='rb') as fp:
+                [digest.update(chunk) for chunk in iter(functools.partial(fp.read, chunk_size), '')]
+            digest = digest.hexdigest()
+            if digest == olddigest and not context.get('overwrite', True):
+                return None
+            else:
+                cr.execute(
+                    'update ir_values set value=%s where name=%s and '
+                    'key=%s',
+                    (digest, pathname, 'digest'))
+    except:
+        pass
+    # DECODIO End noupdate_if_unchanged
+
     try:
         fileobj = misc.file_open(filename)
         _logger.info("loading %s", filename)

@@ -145,10 +145,18 @@ def assert_valid_codeobj(allowed_codes, code_obj, expr):
                        is found in ``code_obj``
     """
     assert_no_dunder_name(code_obj, expr)
+    """ DECODIO: commented v8
     for opcode in _get_opcodes(code_obj):
         if opcode not in allowed_codes:
             raise ValueError(
                 "opcode %s not allowed (%r)" % (opname[opcode], expr))
+    """
+    # DECODIO: backport v10
+    # almost twice as fast as a manual iteration + condition when loading
+    # /web according to line_profiler
+    if set(_get_opcodes(code_obj)) - allowed_codes:
+        raise ValueError("forbidden opcode(s) in %r" % expr)
+
     for const in code_obj.co_consts:
         if isinstance(const, CodeType):
             assert_valid_codeobj(allowed_codes, const, 'lambda')

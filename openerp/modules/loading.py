@@ -30,7 +30,8 @@ import os
 import sys
 import threading
 import time
-from hashlib import md5
+import functools # DECODIO: noupdate_if_unchanged
+from hashlib import sha256  # DECODIO: noupdate_if_unchanged
 
 import openerp
 import openerp.modules.db
@@ -119,9 +120,8 @@ def load_module_graph(cr, graph, status=None, perform_checks=True, skip_modules=
 
                 # DECODIO: Start noupdate_if_unchanged
                 # From Anybox pepp8 branch
-                if tools.config.options.get('noupdate_if_unchanged'):
+                if tools.config.options.get('noupdate_if_unchanged', False):
                     pathname = os.path.join(module_name, filename)
-                    print pathname
                     cr.execute(
                         'select value from ir_values where name=%s and key=%s',
                         (pathname, 'digest'))
@@ -131,11 +131,14 @@ def load_module_graph(cr, graph, status=None, perform_checks=True, skip_modules=
                             'insert into ir_values (name, model, key, value) '
                             'values (%s, %s, %s, NULL)',
                             (pathname, 'ir_module_module', 'digest',))
-                    with tools.file_open(pathname) as fp:
-                        digest = md5.md5(fp.read()).hexdigest()
-                    if digest == olddigest:
-                        noupdate = True
-                        print 'noupdate_if_unchanged'+pathname
+                    chunk_size = 65336
+                    digest = sha256()
+                    with tools.file_open(pathname, mode='rb') as fp:
+                        [digest.update(chunk) for chunk in iter(functools.partial(fp.read, chunk_size), '')]
+                    digest = digest.hexdigest()
+                    if digest == olddigest and mode == 'update':
+                        # noupdate = True
+                        return
                     else:
                         cr.execute(
                             'update ir_values set value=%s where name=%s and '
