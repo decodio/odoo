@@ -36,6 +36,7 @@ import psycopg2.extras
 import psycopg2.extensions
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT, ISOLATION_LEVEL_READ_COMMITTED, ISOLATION_LEVEL_REPEATABLE_READ
 from psycopg2.pool import PoolError
+import time  #DECOD.IO
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 
@@ -504,9 +505,10 @@ class ConnectionPool(object):
         self._connections = []
         self._maxconn = max(maxconn, 1)
         self._lock = threading.Lock()
+        self._idle_timeout = tools.config.get('db_idle_connection_timeout', 0.0)
 
     def __repr__(self):
-        used = len([1 for c, u in self._connections[:] if u])
+        used = len([1 for c, u, t in self._connections[:] if u])
         count = len(self._connections)
         return "ConnectionPool(used=%d/count=%d/max=%d)" % (used, count, self._maxconn)
 
@@ -516,7 +518,7 @@ class ConnectionPool(object):
     @locked
     def borrow(self, dsn):
         # free dead and leaked connections
-        for i, (cnx, _) in tools.reverse_enumerate(self._connections):
+        for i, (cnx, _, t) in tools.reverse_enumerate(self._connections):
             if cnx.closed:
                 self._connections.pop(i)
                 self._debug('Removing closed connection at index %d: %r', i, cnx.dsn)
@@ -524,10 +526,10 @@ class ConnectionPool(object):
             if getattr(cnx, 'leaked', False):
                 delattr(cnx, 'leaked')
                 self._connections.pop(i)
-                self._connections.append((cnx, False))
+                self._connections.append((cnx, False, 0.0))
                 _logger.warning('%r: Free leaked connection to %r', self, cnx.dsn)
 
-        for i, (cnx, used) in enumerate(self._connections):
+        for i, (cnx, used, t) in enumerate(self._connections):
             if not used and cnx._original_dsn == dsn:
                 try:
                     cnx.reset()
@@ -538,14 +540,14 @@ class ConnectionPool(object):
                         cnx.close()
                     continue
                 self._connections.pop(i)
-                self._connections.append((cnx, True))
+                self._connections.append((cnx, True, 0.0))
                 self._debug('Borrow existing connection to %r at index %d', cnx.dsn, i)
 
                 return cnx
 
         if len(self._connections) >= self._maxconn:
             # try to remove the oldest connection not used
-            for i, (cnx, used) in enumerate(self._connections):
+            for i, (cnx, used, t) in enumerate(self._connections):
                 if not used:
                     self._connections.pop(i)
                     if not cnx.closed:
@@ -562,31 +564,44 @@ class ConnectionPool(object):
             _logger.exception('Connection to the database failed')
             raise
         result._original_dsn = dsn
-        self._connections.append((result, True))
+        self._connections.append((result, True, 0.0))
         self._debug('Create new connection')
         return result
 
     @locked
     def give_back(self, connection, keep_in_pool=True):
         self._debug('Give back connection to %r', connection.dsn)
-        for i, (cnx, used) in enumerate(self._connections):
+        for i, (cnx, used, time_used) in enumerate(self._connections):
             if cnx is connection:
                 self._connections.pop(i)
                 if keep_in_pool:
-                    self._connections.append((cnx, False))
+                    # DECOD.IO record time when conn. was last used
+                    self._connections.append((cnx, False, time.time()))
                     self._debug('Put connection to %r in pool', cnx.dsn)
                 else:
                     self._debug('Forgot connection to %r', cnx.dsn)
                     cnx.close()
                 break
+            # DECOD.IO close connections
+            elif self._idle_timeout > 0.0 and not used:
+                if time_used > (time.time() - self._idle_timeout):
+                    self._debug('Idle connection timeout. Closing %r.', cnx.dsn)
+                    print('Idle conn. timeout. Closing %r. Time: %ss',
+                          cnx.dsn, str((time.time() - time_used)/60))
+                    cnx.close()
         else:
             raise PoolError('This connection does not below to the pool')
+
+    @locked
+    def _clear_old_ones(self):
+        last_time = time.time() - self._idle_timeout
+        self._connections = [(c, u, t) for c, u, t in self._connections if u or t > last_time]
 
     @locked
     def close_all(self, dsn=None):
         count = 0
         last = None
-        for i, (cnx, used) in tools.reverse_enumerate(self._connections):
+        for i, (cnx, used, t) in tools.reverse_enumerate(self._connections):
             if dsn is None or cnx._original_dsn == dsn:
                 cnx.close()
                 last = self._connections.pop(i)[0]

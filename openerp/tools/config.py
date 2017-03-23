@@ -292,6 +292,14 @@ class configmanager(object):
         group.add_option("--noupdate_if_unchanged", action="store_true",
                          dest="noupdate_if_unchanged", my_default=False,
                          help="Don't update xml data if unchanged.")
+        group.add_option("--db-idle-connection-timeout",
+                         dest="db_idle_connection_timeout", my_default=0.0,
+                         help="Close idle postgres connections after a timeout."
+                              "This is a decimal value expressed in seconds."
+                              "1h=3600.0s, 2h=7200.0s, 3h=10800.0s ..."
+                              "0.0 is default odoo behavior leaving database "
+                              "connections open indefinitely",
+                         type="float")
         group.add_option("-t", "--timezone", dest="timezone", my_default=False,
                          help="specify reference timezone for the server (e.g. Europe/Brussels")
         group.add_option("--osv-memory-count-limit", dest="osv_memory_count_limit", my_default=False,
@@ -452,7 +460,7 @@ class configmanager(object):
             'osv_memory_count_limit', 'osv_memory_age_limit', 'max_cron_threads', 'unaccent',
             'data_dir',
             'server_wide_modules',
-            'noupdate_if_unchanged',  # DECODIO
+            'noupdate_if_unchanged', 'db_idle_connection_timeout',  # DECODIO
         ]
 
         posix_keys = [
