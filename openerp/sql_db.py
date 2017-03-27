@@ -586,8 +586,6 @@ class ConnectionPool(object):
             elif self._idle_timeout > 0.0 and not used:
                 if time_used > (time.time() - self._idle_timeout):
                     self._debug('Idle connection timeout. Closing %r.', cnx.dsn)
-                    print('Idle conn. timeout. Closing %r. Time: %ss',
-                          cnx.dsn, str((time.time() - time_used)/60))
                     cnx.close()
         else:
             raise PoolError('This connection does not below to the pool')
