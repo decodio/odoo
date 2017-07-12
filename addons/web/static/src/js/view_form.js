@@ -2004,9 +2004,11 @@ instance.web.form.WidgetButton = instance.web.form.FormWidget.extend({
             return exec_action();
         }
     },
+    /* DECODIO: HOTFIX FOR DUPLICATING LINES
+                WHEN ADDING ITEMS TO one2many
+                IF ACTION BUTTON RISES ERROR AND FORM IS NOT SAVED BEFORE */
     on_confirmed: function() {
         var self = this;
-
         var context = this.build_context();
         return this.view.do_execute_action(
             _.extend({}, this.node.attrs, {context: context}),
@@ -2014,6 +2016,8 @@ instance.web.form.WidgetButton = instance.web.form.FormWidget.extend({
                 if (!_.isObject(reason)) {
                     self.view.recursive_reload();
                 }
+            }).fail(function () {
+                self.view.recursive_reload();
             });
     },
     check_disable: function() {
