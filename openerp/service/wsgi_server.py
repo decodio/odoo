@@ -212,6 +212,10 @@ def application_unproxied(environ, start_response):
 def application(environ, start_response):
     if config['proxy_mode'] and 'HTTP_X_FORWARDED_HOST' in environ:
         return werkzeug.contrib.fixers.ProxyFix(application_unproxied)(environ, start_response)
+
+        #num_proxies = config.get('num_proxies', 1)
+        #return werkzeug.contrib.fixers.ProxyFix(
+        #    application_unproxied, num_proxies)(environ, start_response)
     else:
         return application_unproxied(environ, start_response)
 
