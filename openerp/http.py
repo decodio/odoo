@@ -1317,11 +1317,13 @@ class Root(object):
                         _logger.debug("Loading %s", module)
                         # don't load all visible modules
                         # github.com/odoo/odoo/pull/17790
-                        #if 'openerp.addons' in sys.modules:
-                        #    m = __import__('openerp.addons.' + module)
-                        #else:
+                        # if 'odoo.addons' in sys.modules:
+                        #    m = __import__('odoo.addons.' + module)
+                        # else:
                         #    m = None
-                        #addons_module[module] = m
+                        # addons_module[module] = m
+                        #
+                        addons_module[module] = True
                         addons_manifest[module] = manifest
                         statics['/%s/static' % module] = path_static
 
