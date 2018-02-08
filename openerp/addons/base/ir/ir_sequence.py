@@ -52,7 +52,8 @@ class ir_sequence(openerp.osv.osv.osv):
     The sequence model allows to define and use so-called sequence objects.
     Such objects are used to generate unique identifiers in a transaction-safe
     way.
-
+    TODO: [FIX] ir_sequence: add support for PG 10 
+          github com/odoo/odoo/commit/fa5ee6ed2634b1a5b4388efb2c6ab6ae80356f28
     """
     _name = 'ir.sequence'
     _order = 'name'
