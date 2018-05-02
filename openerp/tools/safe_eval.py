@@ -33,6 +33,7 @@ condition/math builtins.
 
 from opcode import HAVE_ARGUMENT, opmap, opname
 from psycopg2 import OperationalError
+from psycopg2 import IntegrityError
 from types import CodeType
 import logging
 
@@ -334,6 +335,8 @@ def safe_eval(expr, globals_dict=None, locals_dict=None, mode="eval", nocopy=Fal
     except OperationalError:
         # Do not hide PostgreSQL low-level exceptions, to let the auto-replay
         # of serialized transactions work its magic
+        raise
+    except IntegrityError:
         raise
     except Exception, e:
         import sys
