@@ -616,7 +616,8 @@ class stock_quant(osv.osv):
         if related_quants:
             #if move has a picking_id, write on that picking that pack_operation might have changed and need to be recomputed
             if move.picking_id:
-                self.pool.get('stock.picking').write(cr, uid, [move.picking_id.id], {'recompute_pack_op': True}, context=context)
+                if not move.picking_id.recompute_pack_op:
+                    self.pool.get('stock.picking').write(cr, uid, [move.picking_id.id], {'recompute_pack_op': True}, context=context)
             if move.partially_available:
                 self.pool.get("stock.move").write(cr, uid, [move.id], {'partially_available': False}, context=context)
             self.write(cr, SUPERUSER_ID, related_quants, {'reservation_id': False}, context=context)
@@ -759,7 +760,10 @@ class stock_picking(osv.osv):
         return res
 
     def _get_pickings(self, cr, uid, ids, context=None):
+        context = context or {}
         res = set()
+        if context.get('skip_computed_state'):
+            return list(res)
         for move in self.browse(cr, uid, ids, context=context):
             if move.picking_id:
                 res.add(move.picking_id.id)
@@ -887,6 +891,9 @@ class stock_picking(osv.osv):
     def action_confirm(self, cr, uid, ids, context=None):
         todo = []
         todo_force_assign = []
+        context = context.copy() or {}
+        context['skip_computed_state'] = True
+        refresh_picking_state = {}
         for picking in self.browse(cr, uid, ids, context=context):
             if picking.location_id.usage in ('supplier', 'inventory', 'production'):
                 todo_force_assign.append(picking.id)
@@ -895,9 +902,18 @@ class stock_picking(osv.osv):
                     todo.append(r.id)
         if len(todo):
             self.pool.get('stock.move').action_confirm(cr, uid, todo, context=context)
-
         if todo_force_assign:
             self.force_assign(cr, uid, todo_force_assign, context=context)
+        # Trigger recompute picking state
+        for picking in self.browse(cr, uid, ids, context=context):
+            if picking.move_lines:
+                refresh_picking_state[picking.id] = picking.move_lines.ids[0]
+                del context['skip_computed_state']
+                for pick, move in refresh_picking_state.items():
+                    move = self.pool.get('stock.move').browse(cr, uid,
+                                [picking.move_lines.ids[0]], context=context)
+                    self.pool.get('stock.move').write(cr, uid, [move.id], {'state': move.state},
+                               context=context)
         return True
 
     def action_assign(self, cr, uid, ids, context=None):
@@ -906,6 +922,9 @@ class stock_picking(osv.osv):
         also impact the state of the picking as it is computed based on move's states.
         @return: True
         """
+        context = context.copy() or {}
+        context['skip_computed_state'] = True
+        refresh_picking_state = {}
         for pick in self.browse(cr, uid, ids, context=context):
             if pick.state == 'draft':
                 self.action_confirm(cr, uid, [pick.id], context=context)
@@ -914,23 +933,67 @@ class stock_picking(osv.osv):
             if not move_ids:
                 raise osv.except_osv(_('Warning!'), _('Nothing to check the availability for.'))
             self.pool.get('stock.move').action_assign(cr, uid, move_ids, context=context)
+
+        for picking in self.browse(cr, uid, ids, context=context):
+            if picking.move_lines:
+                refresh_picking_state[picking.id] = picking.move_lines.ids[0]
+                del context['skip_computed_state']
+                for pick, move in refresh_picking_state.items():
+                    move = self.pool.get('stock.move').browse(cr, uid,
+                                [picking.move_lines.ids[0]], context=context)
+                    self.pool.get('stock.move').write(cr, uid, [move.id], 
+                                                      {'state': move.state},
+                                                                context=context)
         return True
 
     def force_assign(self, cr, uid, ids, context=None):
         """ Changes state of picking to available if moves are confirmed or waiting.
         @return: True
         """
+        context = context.copy() or {}
+        context['skip_computed_state'] = True
+        refresh_picking_state = {}
+
         for pick in self.browse(cr, uid, ids, context=context):
             move_ids = [x.id for x in pick.move_lines if x.state in ['confirmed', 'waiting']]
             self.pool.get('stock.move').force_assign(cr, uid, move_ids, context=context)
         #pack_operation might have changed and need to be recomputed
         self.write(cr, uid, ids, {'recompute_pack_op': True}, context=context)
+        for picking in self.browse(cr, uid, ids, context=context):
+            if picking.move_lines:
+                refresh_picking_state[picking.id] = picking.move_lines.ids[0]
+                del context['skip_computed_state']
+                for pick, move in refresh_picking_state.items():
+                    move = self.pool.get('stock.move').browse(cr, uid,
+                                                              [
+                                                                  picking.move_lines.ids[
+                                                                      0]],
+                                                              context=context)
+                    self.pool.get('stock.move').write(cr, uid, [move.id],
+                                        {'state': move.state},
+                                        context=context)
         return True
 
     def action_cancel(self, cr, uid, ids, context=None):
+        context = context.copy() or {}
+        context['skip_computed_state'] = True
+        refresh_picking_state = {}
         for pick in self.browse(cr, uid, ids, context=context):
             ids2 = [move.id for move in pick.move_lines]
             self.pool.get('stock.move').action_cancel(cr, uid, ids2, context)
+        for picking in self.browse(cr, uid, ids, context=context):
+            if picking.move_lines:
+                refresh_picking_state[picking.id] = picking.move_lines.ids[0]
+                del context['skip_computed_state']
+                for pick, move in refresh_picking_state.items():
+                    move = self.pool.get('stock.move').browse(cr, uid,
+                                                              [
+                                                                  picking.move_lines.ids[
+                                                                      0]],
+                                                              context=context)
+                    self.pool.get('stock.move').write(cr, uid, [move.id],
+                                        {'state': move.state},
+                                        context=context)
         return True
 
     def action_done(self, cr, uid, ids, context=None):
@@ -939,6 +1002,9 @@ class stock_picking(osv.osv):
         Normally that happens when the button "Done" is pressed on a Picking view.
         @return: True
         """
+        context = context.copy() or {}
+        context['skip_computed_state'] = True
+        refresh_picking_state = {}
         for pick in self.browse(cr, uid, ids, context=context):
             todo = []
             for move in pick.move_lines:
@@ -948,6 +1014,19 @@ class stock_picking(osv.osv):
                     todo.append(move.id)
             if len(todo):
                 self.pool.get('stock.move').action_done(cr, uid, todo, context=context)
+        for picking in self.browse(cr, uid, ids, context=context):
+            if picking.move_lines:
+                refresh_picking_state[picking.id] = picking.move_lines.ids[0]
+                del context['skip_computed_state']
+                for pick, move in refresh_picking_state.items():
+                    move = self.pool.get('stock.move').browse(cr, uid,
+                                                              [
+                                                                  picking.move_lines.ids[
+                                                                      0]],
+                                                              context=context)
+                    self.pool.get('stock.move').write(cr, uid, [move.id],
+                                                        {'state': move.state},
+                                                        context=context)
         return True
 
     def unlink(self, cr, uid, ids, context=None):
@@ -1215,6 +1294,9 @@ class stock_picking(osv.osv):
         """
           Will remove all quants for picking in picking_ids
         """
+        context = context.copy() or {}
+        context['skip_computed_state'] = True
+        refresh_picking_state = {}
         moves_to_unreserve = []
         pack_line_to_unreserve = []
         for picking in self.browse(cr, uid, picking_ids, context=context):
@@ -1224,6 +1306,17 @@ class stock_picking(osv.osv):
             if pack_line_to_unreserve:
                 self.pool.get('stock.pack.operation').unlink(cr, uid, pack_line_to_unreserve, context=context)
             self.pool.get('stock.move').do_unreserve(cr, uid, moves_to_unreserve, context=context)
+        for picking in self.browse(cr, uid, picking_ids, context=context):
+            if picking.move_lines:
+                refresh_picking_state[picking.id] = picking.move_lines.ids[0]
+                del context['skip_computed_state']
+                for pick, move in refresh_picking_state.items():
+                    move = self.pool.get('stock.move').browse(cr, uid,
+                                                              [picking.move_lines.ids[0]],
+                                                              context=context)
+                    self.pool.get('stock.move').write(cr, uid, [move.id],
+                                                      {'state': move.state},
+                                                      context=context)
 
     def recompute_remaining_qty(self, cr, uid, picking, context=None):
         def _create_link_for_index(operation_id, index, product_id, qty_to_assign, quant_id=False):
@@ -1402,9 +1495,25 @@ class stock_picking(osv.osv):
         """
         This can be used to provide a button that rereserves taking into account the existing pack operations
         """
+        context = context.copy() or {}
+        context['skip_computed_state'] = True
+        refresh_picking_state = {}
+
         for pick in self.browse(cr, uid, ids, context=context):
             self.rereserve_quants(cr, uid, pick, move_ids = [x.id for x in pick.move_lines
                                                              if x.state not in ('done', 'cancel')], context=context)
+
+        for picking in self.browse(cr, uid, ids, context=context):
+            if picking.move_lines:
+                refresh_picking_state[picking.id] = picking.move_lines.ids[0]
+                del context['skip_computed_state']
+                for pick, move in refresh_picking_state.items():
+                    move = self.pool.get('stock.move').browse(cr, uid,
+                                                              [picking.move_lines.ids[0]],
+                                                              context=context)
+                    self.pool.get('stock.move').write(cr, uid, [move.id],
+                                                      {'state': move.state},
+                                                      context=context)
 
     def rereserve_quants(self, cr, uid, picking, move_ids=[], context=None):
         """ Unreserve quants then try to reassign quants."""
@@ -1440,6 +1549,9 @@ class stock_picking(osv.osv):
         """
         if not context:
             context = {}
+        context = context.copy() or {}
+        context['skip_computed_state'] = True
+        refresh_picking_state = {}
         notrack_context = dict(context, mail_notrack=True)
         stock_move_obj = self.pool.get('stock.move')
         for picking in self.browse(cr, uid, picking_ids, context=context):
@@ -1482,6 +1594,17 @@ class stock_picking(osv.osv):
             self._create_backorder(cr, uid, picking, context=context)
             if toassign_move_ids:
                 stock_move_obj.action_assign(cr, uid, toassign_move_ids, context=context)
+        for picking in self.browse(cr, uid, picking_ids, context=context):
+            if picking.move_lines:
+                refresh_picking_state[picking.id] = picking.move_lines.ids[0]
+                del context['skip_computed_state']
+                for pick, move in refresh_picking_state.items():
+                    move = self.pool.get('stock.move').browse(cr, uid,
+                                                              [picking.move_lines.ids[0]],
+                                                              context=context)
+                    self.pool.get('stock.move').write(cr, uid, [move.id],
+                                                      {'state': move.state},
+                                                      context=context)
         return True
 
     @api.cr_uid_ids_context
@@ -1918,9 +2041,11 @@ class stock_move(osv.osv):
                 raise osv.except_osv(_('Operation Forbidden!'), _('Cannot unreserve a done move'))
             quant_obj.quants_unreserve(cr, uid, move, context=context)
             if self.find_move_ancestors(cr, uid, move, context=context):
-                self.write(cr, uid, [move.id], {'state': 'waiting'}, context=context)
+                if not move.state == 'waiting':
+                    self.write(cr, uid, [move.id], {'state': 'waiting'}, context=context)
             else:
-                self.write(cr, uid, [move.id], {'state': 'confirmed'}, context=context)
+                if not move.state == 'confirmed':
+                    self.write(cr, uid, [move.id], {'state': 'confirmed'}, context=context)
 
     def _prepare_procurement_from_move(self, cr, uid, move, context=None):
         origin = (move.group_id and (move.group_id.name + ":") or "") + (move.rule_id and move.rule_id.name or move.origin or move.picking_id.name or "/")
