@@ -908,7 +908,8 @@ class stock_picking(osv.osv):
         for picking in self.browse(cr, uid, ids, context=context):
             if picking.move_lines:
                 refresh_picking_state[picking.id] = picking.move_lines.ids[0]
-                del context['skip_computed_state']
+                if context and context.get('skip_computed_state'):
+                    del context['skip_computed_state']
                 for pick, move in refresh_picking_state.items():
                     move = self.pool.get('stock.move').browse(cr, uid,
                                 [picking.move_lines.ids[0]], context=context)
@@ -937,7 +938,8 @@ class stock_picking(osv.osv):
         for picking in self.browse(cr, uid, ids, context=context):
             if picking.move_lines:
                 refresh_picking_state[picking.id] = picking.move_lines.ids[0]
-                del context['skip_computed_state']
+                if context and context.get('skip_computed_state'):
+                    del context['skip_computed_state']
                 for pick, move in refresh_picking_state.items():
                     move = self.pool.get('stock.move').browse(cr, uid,
                                 [picking.move_lines.ids[0]], context=context)
@@ -962,7 +964,8 @@ class stock_picking(osv.osv):
         for picking in self.browse(cr, uid, ids, context=context):
             if picking.move_lines:
                 refresh_picking_state[picking.id] = picking.move_lines.ids[0]
-                del context['skip_computed_state']
+                if context and context.get('skip_computed_state'):
+                    del context['skip_computed_state']
                 for pick, move in refresh_picking_state.items():
                     move = self.pool.get('stock.move').browse(cr, uid,
                                                               [
@@ -984,7 +987,8 @@ class stock_picking(osv.osv):
         for picking in self.browse(cr, uid, ids, context=context):
             if picking.move_lines:
                 refresh_picking_state[picking.id] = picking.move_lines.ids[0]
-                del context['skip_computed_state']
+                if context and context.get('skip_computed_state'):
+                    del context['skip_computed_state']
                 for pick, move in refresh_picking_state.items():
                     move = self.pool.get('stock.move').browse(cr, uid,
                                                               [
@@ -1017,7 +1021,8 @@ class stock_picking(osv.osv):
         for picking in self.browse(cr, uid, ids, context=context):
             if picking.move_lines:
                 refresh_picking_state[picking.id] = picking.move_lines.ids[0]
-                del context['skip_computed_state']
+                if context and context.get('skip_computed_state'):
+                    del context['skip_computed_state']
                 for pick, move in refresh_picking_state.items():
                     move = self.pool.get('stock.move').browse(cr, uid,
                                                               [
@@ -1309,7 +1314,8 @@ class stock_picking(osv.osv):
         for picking in self.browse(cr, uid, picking_ids, context=context):
             if picking.move_lines:
                 refresh_picking_state[picking.id] = picking.move_lines.ids[0]
-                del context['skip_computed_state']
+                if context and context.get('skip_computed_state'):
+                    del context['skip_computed_state']
                 for pick, move in refresh_picking_state.items():
                     move = self.pool.get('stock.move').browse(cr, uid,
                                                               [picking.move_lines.ids[0]],
@@ -1506,7 +1512,8 @@ class stock_picking(osv.osv):
         for picking in self.browse(cr, uid, ids, context=context):
             if picking.move_lines:
                 refresh_picking_state[picking.id] = picking.move_lines.ids[0]
-                del context['skip_computed_state']
+                if context and context.get('skip_computed_state'):
+                    del context['skip_computed_state']
                 for pick, move in refresh_picking_state.items():
                     move = self.pool.get('stock.move').browse(cr, uid,
                                                               [picking.move_lines.ids[0]],
@@ -1597,7 +1604,8 @@ class stock_picking(osv.osv):
         for picking in self.browse(cr, uid, picking_ids, context=context):
             if picking.move_lines:
                 refresh_picking_state[picking.id] = picking.move_lines.ids[0]
-                del context['skip_computed_state']
+                if context and context.get('skip_computed_state'):
+                    del context['skip_computed_state']
                 for pick, move in refresh_picking_state.items():
                     move = self.pool.get('stock.move').browse(cr, uid,
                                                               [picking.move_lines.ids[0]],
