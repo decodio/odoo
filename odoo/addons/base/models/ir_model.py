@@ -184,7 +184,8 @@ class IrModel(models.Model):
                 if kind == 'v':
                     self._cr.execute('DROP VIEW "%s"' % table)
                 elif kind == 'r':
-                    self._cr.execute('DROP TABLE "%s" CASCADE' % table)
+                    # self._cr.execute('DROP TABLE "%s" CASCADE' % table)
+                    _logger.warning('NOT dropping table: %s CASCADE', table)
                     # discard all translations for this model
                     self._cr.execute("""
                         DELETE FROM ir_translation
@@ -573,7 +574,9 @@ class IrModelFields(models.Model):
             is_model = model is not None
             if is_model and tools.column_exists(self._cr, model._table, field.name) and \
                     tools.table_kind(self._cr, model._table) == 'r':
-                self._cr.execute('ALTER TABLE "%s" DROP COLUMN "%s" CASCADE' % (model._table, field.name))
+                _logger.warning('NOT cascade dropping column %s.%s', model._table, field.name)
+                # self._cr.execute('ALTER TABLE "%s" DROP COLUMN "%s" CASCADE' % (model._table, field.name))
+                self._cr.execute('ALTER TABLE "%s" ALTER COLUMN "%s" DROP NOT NULL' % (model._table, field.name))
             if field.state == 'manual' and field.ttype == 'many2many':
                 rel_name = field.relation_table or (is_model and model._fields[field.name].relation)
                 tables_to_drop.add(rel_name)
@@ -593,7 +596,8 @@ class IrModelFields(models.Model):
                              (tuple(tables_to_drop), tuple(self.ids)))
             tables_to_keep = set(row[0] for row in self._cr.fetchall())
             for rel_name in tables_to_drop - tables_to_keep:
-                self._cr.execute('DROP TABLE "%s"' % rel_name)
+                _logger.warning('Not dropping table %s.', rel_name)
+                # self._cr.execute('DROP TABLE "%s"' % rel_name)
 
         return True
 
@@ -1132,8 +1136,9 @@ class IrModelRelation(models.Model):
 
         # drop m2m relation tables
         for table in to_drop:
-            self._cr.execute('DROP TABLE "%s" CASCADE' % table,)
-            _logger.info('Dropped table %s', table)
+            _logger.warning('NOT dropping table: %s ', table)
+            # self._cr.execute('DROP TABLE "%s" CASCADE' % table,)
+            # _logger.info('Dropped table %s', table)
 
     def _reflect_relation(self, model, table, module):
         """ Reflect the table of a many2many field for the given model, to make
