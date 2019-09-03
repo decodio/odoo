@@ -156,7 +156,7 @@ class TestSchema(common.TransactionCase):
             'table_name': u'test_new_api_category',
             'table_schema': u'public',
             'udt_catalog': self.cr.dbname,
-            'udt_name': u'int4',
+            'udt_name': u'int8',
             'udt_schema': u'pg_catalog',
         })
 

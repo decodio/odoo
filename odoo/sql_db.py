@@ -38,6 +38,11 @@ def undecimalize(symb, cr):
 
 psycopg2.extensions.register_type(psycopg2.extensions.new_type((700, 701, 1700,), 'float', undecimalize))
 
+# DECODIO: +KGB INT, BIGINT TO python INT to avoid long Python int on
+# 64bit ubuntu server is 64bit, no need for long
+psycopg2.extensions.register_type(
+    psycopg2.extensions.new_type((20, 23,), 'int',
+    lambda value, curs: int(value) if value is not None else None))
 
 from . import tools
 from .tools.func import frame_codeinfo
