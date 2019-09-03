@@ -41,4 +41,6 @@ All modifications are done by strict Decodio standards
 Major difference from main Odoo:
 - all integers in database are bigint instead of integer
 - all floats are numeric type  (prefer precision over speed)
+- new configuration option : db-idle-connection-timeout
+     - set value in seconds and inactive connection will be closed after given period
 
