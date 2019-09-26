@@ -1053,8 +1053,11 @@ class Integer(Field):
     def convert_to_read(self, value, use_name_get=True):
         # Integer values greater than 2^31-1 are not supported in pure XMLRPC,
         # so we have to pass them as floats :-(
-        if value and value > xmlrpclib.MAXINT:
-            return float(value)
+
+        # DECODIO self.env.ref('module.xml_id') returns float not iterable
+
+        # if value and value > xmlrpclib.MAXINT:
+            # return float(value)
         return value
 
     def _update(self, records, value):
