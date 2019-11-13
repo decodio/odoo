@@ -318,3 +318,11 @@ exception
 end;
 $$ language 'plpgsql';
 
+
+create or replace function round(numeric, bigint) returns numeric
+as $$
+begin
+    return(select round($1::numeric,$2::int));
+end;
+$$ language 'plpgsql';
+
