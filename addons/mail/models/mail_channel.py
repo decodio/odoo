@@ -461,7 +461,7 @@ class Channel(models.Model):
 
     @api.multi
     def _update_moderation_email(self, emails, status):
-        """ This method adds emails into either white or black of the channel list of emails 
+        """ This method adds emails into either white or black of the channel list of emails
             according to status. If an email in emails is already moderated, the method updates the email status.
             :param emails: list of email addresses to put in white or black list of channel.
             :param status: value is 'allow' or 'ban'. Emails are put in white list if 'allow', in black list if 'ban'.
@@ -631,7 +631,7 @@ class Channel(models.Model):
                     AND P.partner_id IN %s
                     AND channel_type LIKE 'chat'
                 GROUP BY P.channel_id
-                HAVING array_agg(P.partner_id ORDER BY P.partner_id) = %s
+                HAVING array_agg(P.partner_id ORDER BY P.partner_id) = %s::bigint[]
             """, (tuple(partners_to), sorted(list(partners_to)),))
             result = self.env.cr.dictfetchall()
             if result:
