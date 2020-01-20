@@ -256,7 +256,7 @@ class StockMove(models.Model):
                 ), self.product_uom
             )
             location_id = False
-            if float_compare(qty_to_add, available_quantity, precision_rounding=self.product_uom.rounding) < 0:
+            if float_compare(qty_to_add, available_quantity, precision_rounding=self.product_uom.rounding) < 1:
                 location_id = quants.filtered(lambda r: r.quantity > 0)[-1:].location_id
 
             vals = {
@@ -283,9 +283,3 @@ class StockMove(models.Model):
     def _should_be_assigned(self):
         res = super(StockMove, self)._should_be_assigned()
         return bool(res and not (self.production_id or self.raw_material_production_id))
-
-    def _search_picking_for_assignation_domain(self):
-        res = super(StockMove, self)._search_picking_for_assignation_domain()
-        if self.created_production_id:
-            res.append(('move_lines.created_production_id', '=', self.created_production_id.id))
-        return res
