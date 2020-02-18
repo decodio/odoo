@@ -12,6 +12,7 @@ from odoo import http, fields
 from odoo.addons.http_routing.models.ir_http import slug, unslug
 from odoo.addons.website.controllers.main import QueryURL
 from odoo.http import request
+from odoo.osv import expression
 from odoo.tools import html2plaintext
 
 
@@ -179,7 +180,7 @@ class WebsiteBlog(http.Controller):
         response = request.render("website_blog.blog_post_short", values)
         return response
 
-    @http.route(['''/blog/<model("blog.blog", "[('website_id', 'in', (False, current_website_id))]"):blog>/feed'''], type='http', auth="public")
+    @http.route(['''/blog/<model("blog.blog", "[('website_id', 'in', (False, current_website_id))]"):blog>/feed'''], type='http', auth="public", website=True)
     def blog_feed(self, blog, limit='15', **kwargs):
         v = {}
         v['blog'] = blog
@@ -238,9 +239,11 @@ class WebsiteBlog(http.Controller):
         tags = request.env['blog.tag'].search([])
 
         # Find next Post
-        all_post = BlogPost.search([('blog_id', '=', blog.id)])
+        blog_post_domain = [('blog_id', '=', blog.id)]
         if not request.env.user.has_group('website.group_website_designer'):
-            all_post = all_post.filtered(lambda r: r.post_date <= fields.Datetime.now())
+            blog_post_domain += [('post_date', '<=', fields.Datetime.now())]
+
+        all_post = BlogPost.search(blog_post_domain)
 
         if blog_post not in all_post:
             return request.redirect("/blog/%s" % (slug(blog_post.blog_id)))
@@ -276,6 +279,7 @@ class WebsiteBlog(http.Controller):
             # Increase counter
             blog_post.sudo().write({
                 'visits': blog_post.visits+1,
+                'write_date': blog_post.write_date,
             })
         return response
 
@@ -312,5 +316,6 @@ class WebsiteBlog(http.Controller):
 
     @http.route(['/blog/render_latest_posts'], type='json', auth='public', website=True)
     def render_latest_posts(self, template, domain, limit=None, order='published_date desc'):
+        domain = expression.AND([domain, request.website.website_domain()])
         posts = request.env['blog.post'].search(domain, limit=limit, order=order)
-        return request.env.ref(template).render({'posts': posts})
+        return request.website.viewref(template).render({'posts': posts})
