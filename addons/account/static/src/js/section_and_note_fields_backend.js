@@ -218,4 +218,10 @@ var SectionAndNoteFieldText = function (parent, name, record, options) {
 fieldRegistry.add('section_and_note_one2many', SectionAndNoteFieldOne2Many);
 fieldRegistry.add('section_and_note_text', SectionAndNoteFieldText);
 
+/*DECODIO: return so we can extend or include widgets*/
+return {
+    SectionAndNoteListRenderer: SectionAndNoteListRenderer,
+    SectionAndNoteFieldOne2Many: SectionAndNoteFieldOne2Many,
+    SectionAndNoteFieldText: SectionAndNoteFieldText,
+};
 });
