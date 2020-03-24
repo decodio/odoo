@@ -74,7 +74,7 @@ class AcquirerSips(models.Model):
         currency_code = CURRENCY_CODES.get(currency.name, False)
         if not currency_code:
             raise ValidationError(_('Currency not supported by Wordline'))
-        amount = int(values['amount'] * 100)
+        amount = round(values['amount'] * 100)
         if self.environment == 'prod':
             # For production environment, key version 2 is required
             merchant_id = getattr(self, 'sips_merchant_id')
@@ -90,7 +90,7 @@ class AcquirerSips(models.Model):
                     u'currencyCode=%s|' % currency_code +
                     u'merchantId=%s|' % merchant_id +
                     u'normalReturnUrl=%s|' % urls.url_join(base_url, SipsController._return_url) +
-                    u'automaticResponseUrl=%s|' % urls.url_join(base_url, SipsController._return_url) +
+                    u'automaticResponseUrl=%s|' % urls.url_join(base_url, SipsController._notify_url) +
                     u'transactionReference=%s|' % values['reference'] +
                     u'statementReference=%s|' % values['reference'] +
                     u'keyVersion=%s' % key_version,
@@ -186,7 +186,6 @@ class TxSips(models.Model):
         status = data.get('responseCode')
         data = {
             'acquirer_reference': data.get('transactionReference'),
-            'partner_reference': data.get('customerId'),
             'date': data.get('transactionDateTime',
                                       fields.Datetime.now())
         }
