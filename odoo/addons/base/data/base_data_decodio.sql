@@ -6,13 +6,19 @@
 -- Postgres tools
 -------------------------------------------------------------------------
 -- expected from template database
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+CREATE EXTENSION IF NOT EXISTS "unaccent";
+
+--CREATE EXTENSION IF NOT EXISTS "postgis";
+--CREATE EXTENSION IF NOT EXISTS "postgis_topology";
+
 CREATE EXTENSION IF NOT EXISTS "tablefunc";
 CREATE EXTENSION IF NOT EXISTS "adminpack";
 CREATE EXTENSION IF NOT EXISTS "postgres_fdw";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "ltree";
 CREATE EXTENSION IF NOT EXISTS "hstore";
-CREATE EXTENSION IF NOT EXISTS plpythonu;
+CREATE EXTENSION IF NOT EXISTS plpython3u;
 
 -------------------------------------------------------------------------
 -- Database wide IR dictionary
