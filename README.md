@@ -27,16 +27,15 @@ a full-featured <a href="https://www.odoo.com">Open Source ERP</a> when you inst
 
 Getting started with Odoo
 -------------------------
-For a standard installation please follow the <a href="https://www.odoo.com/documentation/master/setup/install.html">Setup instructions</a>
+For a standard installation please follow the <a href="https://www.odoo.com/documentation/12.0/setup/install.html">Setup instructions</a>
 from the documentation.
 
-Then follow <a href="https://www.odoo.com/documentation/master/tutorials.html">the developer tutorials</a>
+Then follow <a href="https://www.odoo.com/documentation/12.0/tutorials.html">the developer tutorials</a>
 
 DECODIO specific
 ----------------
 
 This is Decodio customized / SMOP-ed instance.
-All modifications are done by strict Decodio standards
 
 Major difference from main Odoo:
 - all integers in database are bigint instead of integer
