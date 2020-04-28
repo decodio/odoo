@@ -36,7 +36,14 @@ def undecimalize(symb, cr):
         return None
     return float(symb)
 
-psycopg2.extensions.register_type(psycopg2.extensions.new_type((700, 701, 1700,), 'float', undecimalize))
+# psycopg2.extensions.register_type(psycopg2.extensions.new_type((700, 701, 1700,), 'float', undecimalize))
+
+# https://www.psycopg.org/docs/faq.html#faq-float
+DEC2FLOAT = psycopg2.extensions.new_type(
+    psycopg2.extensions.DECIMAL.values,
+    'DEC2FLOAT',
+    lambda value, curs: float(value) if value is not None else None)
+psycopg2.extensions.register_type(DEC2FLOAT)
 
 from . import tools
 from .tools.func import frame_codeinfo

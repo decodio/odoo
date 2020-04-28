@@ -1245,7 +1245,7 @@ class Float(Field):
                    cursor and returning a pair (total, decimal)
     """
     type = 'float'
-    column_cast_from = ('int8', 'numeric', 'float8')
+    column_cast_from = ('int4', 'int8', 'numeric', 'float8')
     _slots = {
         '_digits': None,                # digits argument passed to class initializer
         'group_operator': 'sum',
@@ -1256,13 +1256,15 @@ class Float(Field):
 
     @property
     def column_type(self):
+        # DECODIO: Always use numeric
+        return ('numeric', 'numeric')
         # Explicit support for "falsy" digits (0, False) to indicate a NUMERIC
         # field with no fixed precision. The values are saved in the database
         # with all significant digits.
         # FLOAT8 type is still the default when there is no precision because it
         # is faster for most operations (sums, etc.)
-        return ('numeric', 'numeric') if self.digits is not None else \
-               ('float8', 'double precision')
+        # return ('numeric', 'numeric') if self.digits is not None else \
+        #       ('float8', 'double precision')
 
     @property
     def digits(self):
@@ -1573,7 +1575,7 @@ class Html(_String):
 class Date(Field):
     type = 'date'
     column_type = ('date', 'date')
-    column_cast_from = ('timestamp',)
+    column_cast_from = ('timestamp',)  # will lose time on upgrade base
 
     start_of = staticmethod(date_utils.start_of)
     end_of = staticmethod(date_utils.end_of)
@@ -2672,9 +2674,10 @@ class Many2many(_RelationalMulti):
                                  model, self.relation, self._module)
         if not sql.table_exists(cr, self.relation):
             comodel = model.env[self.comodel_name]
+            # DECODIO BIGINT
             query = """
-                CREATE TABLE "{rel}" ("{id1}" INTEGER NOT NULL,
-                                      "{id2}" INTEGER NOT NULL,
+                CREATE TABLE "{rel}" ("{id1}" BIGINT NOT NULL,
+                                      "{id2}" BIGINT NOT NULL,
                                       UNIQUE("{id1}","{id2}"));
                 COMMENT ON TABLE "{rel}" IS %s;
                 CREATE INDEX ON "{rel}" ("{id1}");

@@ -101,7 +101,11 @@ def convert_column(cr, tablename, columnname, columntype):
             ALTER TABLE "{0}" DROP COLUMN  __temp_type_cast CASCADE;
         '''
         cr.execute(query.format(tablename, columnname, columntype))
-    _schema.debug("Table %r: column %r changed to type %s", tablename, columnname, columntype)
+    _schema.warning("Table %r: column %r changed to type %s", tablename, columnname, columntype)
+    if columntype == 'date':
+        _schema.warning("Table %r: column %r converting timestamp to date "
+                        "TIME IS LOST!", tablename, columnname)
+
 
 def set_not_null(cr, tablename, columnname):
     """ Add a NOT NULL constraint on the given column. """
