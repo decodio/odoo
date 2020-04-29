@@ -102,9 +102,13 @@ def convert_column(cr, tablename, columnname, columntype):
         '''
         cr.execute(query.format(tablename, columnname, columntype))
     _schema.warning("Table %r: column %r changed to type %s", tablename, columnname, columntype)
+    # [DECODIO]: Warning about possible data loss
     if columntype == 'date':
         _schema.warning("Table %r: column %r converting timestamp to date "
                         "TIME IS LOST!", tablename, columnname)
+    if columntype == 'double precision':
+        _schema.warning("Table %r: column %r converting numeric to FLOAT "
+                        "PRECISION IS LOST!", tablename, columnname)
 
 
 def set_not_null(cr, tablename, columnname):
