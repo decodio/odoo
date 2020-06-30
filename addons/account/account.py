@@ -1835,6 +1835,12 @@ def get_precision_tax():
         return (16, res+3)
     return change_digit_tax
 
+def get_precision_tax12():
+    def change_digit_tax(cr):
+        res = openerp.registry(cr.dbname)['decimal.precision'].precision_get(cr, SUPERUSER_ID, 'Account')
+        return (16, 12)
+    return change_digit_tax
+
 class account_tax(osv.osv):
     """
     A tax object.
@@ -1859,7 +1865,7 @@ class account_tax(osv.osv):
     _columns = {
         'name': fields.char('Tax Name', required=True, translate=True, help="This name will be displayed on reports"),
         'sequence': fields.integer('Sequence', required=True, help="The sequence field is used to order the tax lines from the lowest sequences to the higher ones. The order is important if you have a tax with several tax children. In this case, the evaluation order is important."),
-        'amount': fields.float('Amount', required=True, digits_compute=(16,12),
+        'amount': fields.float('Amount', required=True, digits_compute=get_precision_tax12(),
                                help="For taxes of type percentage, enter % ratio between 0-1."),
         'active': fields.boolean('Active', help="If the active field is set to False, it will allow you to hide the tax without removing it."),
         'type': fields.selection( [('percent','Percentage'), ('fixed','Fixed Amount'), ('none','None'), ('code','Python Code'), ('balance','Balance')], 'Tax Type', required=True,
