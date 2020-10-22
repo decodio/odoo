@@ -1942,7 +1942,7 @@ class Selection(Field):
         if (self.selection and
                 isinstance(self.selection, list) and
                 isinstance(self.selection[0][0], int)):
-            return ('int8', 'integer')
+            return ('int8', 'int8')
         else:
             return ('varchar', pg_varchar())
 
